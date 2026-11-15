@@ -5,6 +5,10 @@ __pycache__/
 .venv/
 env/
 
+# برامج تنفيذية وأدوات
+cloudflared.exe
+*.exe
+
 # الملفات المرفوعة مؤقتاً للطباعة (لحماية الخصوصية)
 uploads/*
 !uploads/.gitkeep
@@ -16,4 +20,3 @@ shared_files/*
 # ملفات النظام
 Thumbs.db
 .DS_Store
-
