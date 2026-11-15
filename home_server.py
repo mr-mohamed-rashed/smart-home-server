@@ -33,10 +33,11 @@ app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 app.config['SHARED_FOLDER'] = SHARED_FOLDER
 
 def load_settings():
-    """تحميل إعدادات السيرفر مثل IP الطابعة"""
+    """تحميل إعدادات السيرفر مثل IP الطابعة والرابط الخارجي"""
     default_settings = {
         "printer_ip": "192.168.100.43",
-        "printer_model": "Ricoh Aficio SP C252SF"
+        "printer_model": "Ricoh Aficio SP C252SF",
+        "cloudflare_url": "https://wherever-von-existing-printing.trycloudflare.com"
     }
     if os.path.exists(SETTINGS_FILE):
         try:
@@ -120,16 +121,17 @@ def parse_page_range(selection_type, custom_str, total_pages):
     else:
         return list(range(total_pages))
 
-# ==================== محرك بناء أوامر الطباعة المتقدمة (مع الهامش الصفري بدون حواف) ====================
+# ==================== محرك بناء أوامر الطباعة المتقدمة (مع إلغاء الحواف التام Full Bleed) ====================
 
 def build_advanced_print_job(images, paper_size='A4', orientation='auto', color_mode='color', 
-                             paper_type='plain', fit_mode='fit', scale_percent=100, margin_mm=0, copies=1, duplex='off'):
+                             paper_type='plain', fit_mode='stretch', scale_percent=100, 
+                             margin_mm=0, shift_x_mm=0, shift_y_mm=0, copies=1, duplex='off'):
     """
     بناء دفق طباعة متكامل (PJL + PostScript 3) مع دعم:
-    - إزالة الحواف تماماً (Borderless / 0mm Margin)
-    - التمديد الحر (Stretch) وتغيير نسبة الحجم (Scale %)
+    - إلغاء الحواف تماماً (Full Bleed مع إزالة حواف الرول الميكانيكية لطابعة الليزر)
+    - إمكانية الإزاحة الدقيقة (Shift X / Shift Y) لتوسيط الورقة بالملم
+    - الاسترتش والتكبير (Scale)
     - الطباعة وش وضهر (Duplex)
-    - مقاس الورقة ونمط الألوان
     """
     sizes = {
         'A4': (595, 842),
@@ -137,9 +139,6 @@ def build_advanced_print_job(images, paper_size='A4', orientation='auto', color_
         'A5': (420, 595)
     }
     base_w, base_h = sizes.get(paper_size, (595, 842))
-    
-    # تحويل المليمتر إلى نقاط PostScript (1 mm = 2.835 points)
-    margin = float(margin_mm) * 2.835
 
     pjl_media = {
         'plain': 'REGULAR',
@@ -174,10 +173,14 @@ def build_advanced_print_job(images, paper_size='A4', orientation='auto', color_
     stream.append('%%Creator: Smart Home Server Print Engine\r\n')
     stream.append(f'%%Pages: {len(images)}\r\n')
     stream.append(f'%%BoundingBox: 0 0 {base_w} {base_h}\r\n')
+    # أمر إلغاء أي حدود ميكانيكية برمجية (Unclipped Imaging)
+    stream.append('<</ImagingBBox null>> setpagedevice\r\n')
     stream.append(ps_duplex)
     stream.append('%%EndComments\r\n')
 
-    scale_factor = max(0.2, min(2.5, scale_percent / 100.0))
+    scale_factor = max(0.2, min(3.0, scale_percent / 100.0))
+    shift_x = float(shift_x_mm) * 2.835
+    shift_y = float(shift_y_mm) * 2.835
 
     for idx, raw_img in enumerate(images):
         orig_w, orig_h = raw_img.size
@@ -198,27 +201,45 @@ def build_advanced_print_job(images, paper_size='A4', orientation='auto', color_
             img = raw_img.convert('RGB')
             is_color = True
 
-        tw = max(10, pw - (2 * margin))
-        th = max(10, ph - (2 * margin))
+        # معالجة الهوامش وإلغاء الحواف (Full Bleed)
+        if margin_mm <= 0:
+            # وضع بدون حواف حقيقي (Overscan Bleed):
+            # نمدد المحتوى بمقدار 4 ملم إضافية خارج الورقة لمحو منطقة بكرات السحب تماماً
+            bleed = 11.5  # حوالي 4 ملم
+            tw = pw + (2 * bleed)
+            th = ph + (2 * bleed)
+            base_px = -bleed
+            base_py = -bleed
+        else:
+            margin = float(margin_mm) * 2.835
+            tw = max(10, pw - (2 * margin))
+            th = max(10, ph - (2 * margin))
+            base_px = margin
+            base_py = margin
 
-        # حساب الأبعاد وفق نمط الاسترتش ومقدار الهامش
+        # حساب الأبعاد وفق نمط الاسترتش
         if fit_mode == 'stretch':
+            # تمديد كامل لعرض وارتفاع الورقة
             dw = tw * scale_factor
             dh = th * scale_factor
-        elif fit_mode == 'fill':
+            px = base_px + (tw - dw) / 2 + shift_x
+            py = base_py + (th - dh) / 2 + shift_y
+        elif fit_mode == 'cover':
+            # تغطية كاملة مع الحفاظ على النسب (يقص الزائد بدون مط)
             s = max(tw / orig_w, th / orig_h) * scale_factor
             dw = orig_w * s
             dh = orig_h * s
-        else:  # 'fit'
+            px = base_px + (tw - dw) / 2 + shift_x
+            py = base_py + (th - dh) / 2 + shift_y
+        else:  # 'fit' ملاءمة عادية
             s = min(tw / orig_w, th / orig_h) * scale_factor
             dw = orig_w * s
             dh = orig_h * s
+            px = base_px + (tw - dw) / 2 + shift_x
+            py = base_py + (th - dh) / 2 + shift_y
 
-        px = margin + (tw - dw) / 2
-        py = margin + (th - dh) / 2
-
-        if max(orig_w, orig_h) > 1500:
-            resample_ratio = 1500 / max(orig_w, orig_h)
+        if max(orig_w, orig_h) > 1600:
+            resample_ratio = 1600 / max(orig_w, orig_h)
             img = img.resize((int(orig_w * resample_ratio), int(orig_h * resample_ratio)), Image.Resampling.LANCZOS)
 
         iw, ih = img.size
@@ -335,6 +356,7 @@ def index():
     return render_template('index.html',
                            server_ip=my_ip,
                            subnet=subnet,
+                           cloudflare_url=settings.get("cloudflare_url", ""),
                            printer_ip=settings["printer_ip"],
                            printer_online=printer_online,
                            devices=cached_devices,
@@ -361,9 +383,11 @@ def handle_print():
     orientation = request.form.get('orientation', 'auto')
     color_mode = request.form.get('color_mode', 'color')
     paper_type = request.form.get('paper_type', 'plain')
-    fit_mode = request.form.get('fit_mode', 'fit')
+    fit_mode = request.form.get('fit_mode', 'stretch')
     scale_percent = int(request.form.get('scale_percent', 100))
-    margin_mm = float(request.form.get('margin_mm', 0)) # الهوامش بالملم (0 = بدون حواف)
+    margin_mm = float(request.form.get('margin_mm', 0))
+    shift_x_mm = float(request.form.get('shift_x_mm', 0))
+    shift_y_mm = float(request.form.get('shift_y_mm', 0))
     duplex = request.form.get('duplex', 'off')
 
     # قراءة خيارات تحديد الصفحات
@@ -400,14 +424,16 @@ def handle_print():
                 fit_mode=fit_mode,
                 scale_percent=scale_percent,
                 margin_mm=margin_mm,
+                shift_x_mm=shift_x_mm,
+                shift_y_mm=shift_y_mm,
                 copies=copies,
                 duplex=duplex
             )
             
             send_to_raw_printer(printer_ip, payload)
             
-            margin_desc = "بدون حواف (0mm)" if margin_mm == 0 else f"هامش {margin_mm}mm"
-            flash(f"تمت طباعة الصورة بنجاح! [{margin_desc} | استرتش كامل | {copies} نسخة] ✅🖨️", "success")
+            margin_desc = "بدون حواف نهائياً (Full Bleed)" if margin_mm <= 0 else f"هامش {margin_mm}mm"
+            flash(f"تمت طباعة الصورة بنجاح! [{margin_desc} | استرتش متكامل | {copies} نسخة] ✅🖨️", "success")
         except Exception as e:
             flash(f"حدث خطأ أثناء طباعة الصورة: {str(e)}", "danger")
 
@@ -447,13 +473,15 @@ def handle_print():
                     fit_mode=fit_mode,
                     scale_percent=scale_percent,
                     margin_mm=margin_mm,
+                    shift_x_mm=shift_x_mm,
+                    shift_y_mm=shift_y_mm,
                     copies=copies,
                     duplex=duplex
                 )
 
                 send_to_raw_printer(printer_ip, payload)
                 
-                margin_desc = "بدون حواف (0mm)" if margin_mm == 0 else f"هامش {margin_mm}mm"
+                margin_desc = "بدون حواف (Full Bleed)" if margin_mm <= 0 else f"هامش {margin_mm}mm"
                 flash(f"تمت طباعة PDF بنجاح! [{margin_desc} | صفحات {[p+1 for p in selected_indices]}] 🖨️📄", "success")
             except Exception as e:
                 flash(f"حدث خطأ أثناء طباعة PDF: {str(e)}", "danger")
@@ -509,7 +537,7 @@ def delete_file(filename):
 if __name__ == '__main__':
     local_ip, subnet = get_local_ip_and_subnet()
     print("\n" + "="*60)
-    print("🏠 سيرفر البيت الذكي (Smart Home Server) مع دعم الطباعة بدون حواف (0mm)!")
+    print("🏠 سيرفر البيت الذكي (Smart Home Server) مع دعم Full Bleed والإزاحة الدقيقة!")
     print(f"👉 افتح هذا الرابط من متصفح أي موبايل أو كمبيوتر بالمنزل:")
     print(f"       http://{local_ip}:5000")
     print(f"   أو محلياً من هذا اللابتوب:")

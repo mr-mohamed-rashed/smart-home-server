@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>🏠 سيرفر البيت الذكي | Smart Home Server</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.rtl.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
@@ -15,21 +15,30 @@
             --primary-gradient: linear-gradient(135deg, #1e40af, #3b82f6);
             --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
         }
-        body {
+        html, body {
+            overflow-x: hidden !important;
+            width: 100% !important;
+            max-width: 100vw !important;
+            margin: 0;
+            padding: 0;
             background-color: #f1f5f9;
             font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
             color: #0f172a;
         }
+        .container {
+            max-width: 900px;
+            overflow-x: hidden;
+        }
         .navbar-custom {
             background: var(--primary-gradient);
             color: white;
-            padding: 18px 0;
+            padding: 16px 0;
             box-shadow: 0 4px 20px rgba(37, 99, 235, 0.25);
         }
         .nav-pills .nav-link {
             border-radius: 12px;
             font-weight: 600;
-            padding: 10px 20px;
+            padding: 10px 15px;
             color: #64748b;
             transition: all 0.2s ease;
         }
@@ -43,11 +52,12 @@
             border-radius: 18px;
             background: #ffffff;
             box-shadow: var(--card-shadow);
+            overflow: hidden;
         }
         .upload-dropzone {
             border: 2px dashed #3b82f6;
             border-radius: 16px;
-            padding: 35px 20px;
+            padding: 30px 15px;
             text-align: center;
             background: #f8fafc;
             cursor: pointer;
@@ -88,18 +98,18 @@
             color: #e3e3e3;
             border: none;
             border-radius: 18px;
+            overflow: hidden;
         }
         .chrome-sidebar {
             background-color: #1e1f22;
-            padding: 24px;
-            border-radius: 18px 0 0 18px;
+            padding: 20px;
             height: 88vh;
             overflow-y: auto;
+            overflow-x: hidden;
         }
         .chrome-preview-pane {
             background-color: #3f4246;
-            padding: 25px;
-            border-radius: 0 18px 18px 0;
+            padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -118,39 +128,38 @@
             align-items: center;
             justify-content: center;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 2px;
         }
         .a4-portrait {
-            width: 320px;
-            height: 452px; /* 1 : 1.414 */
+            width: 310px;
+            height: 438px;
         }
         .a4-landscape {
-            width: 452px;
-            height: 320px;
+            width: 438px;
+            height: 310px;
         }
 
-        /* الحاوية الداخلية للورقة مع دعم إلغاء الحواف تماماً */
         #previewContainer {
             width: 100%;
             height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0px; /* الافتراضي الآن بدون حواف لمنع ظهور خطوط بيضاء */
+            padding: 0px;
             box-sizing: border-box;
             transition: all 0.15s ease;
             overflow: hidden;
+            position: relative;
         }
         #previewImg, #previewCanvas {
             transition: all 0.15s ease;
         }
 
-        /* أدوات الشاشة المنسدلة */
         .chrome-sidebar .form-label {
             color: #a1a1aa;
-            font-size: 0.88rem;
-            margin-bottom: 6px;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
         }
         .chrome-sidebar .form-select, 
         .chrome-sidebar .form-control {
@@ -165,14 +174,6 @@
             color: #ffffff;
             border-color: #3b82f6;
             box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
-        }
-        .chrome-sidebar .form-check-input {
-            background-color: #2b2d30;
-            border-color: #52525b;
-        }
-        .chrome-sidebar .form-check-input:checked {
-            background-color: #3b82f6;
-            border-color: #3b82f6;
         }
         .btn-print-action {
             background-color: #a8c7fa;
@@ -202,7 +203,7 @@
 <header class="navbar-custom mb-4">
     <div class="container d-flex justify-content-between align-items-center">
         <div>
-            <h4 class="mb-0 fw-bold"><i class="bi bi-house-door-fill me-2"></i>سيرفر البيت الذكي</h4>
+            <h5 class="mb-0 fw-bold"><i class="bi bi-house-door-fill me-2"></i>سيرفر البيت الذكي</h5>
             <small class="opacity-75">مركز الطباعة المنزلي لطابعة ريكو (Ricoh SP C252SF)</small>
         </div>
         <div>
@@ -213,7 +214,7 @@
     </div>
 </header>
 
-<div class="container" style="max-width: 900px;">
+<div class="container">
 
     <!-- Alerts -->
     {% with messages = get_flashed_messages(with_categories=true) %}
@@ -227,22 +228,41 @@
       {% endif %}
     {% endwith %}
 
-    <!-- بطاقة مشاركة الرابط مع الأولاد -->
+    <!-- بطاقة مشاركة الروابط مع الأولاد (مضبوطة تماماً لمنع أي اسكرول عرضي) -->
     <div class="card card-custom p-3 mb-4 bg-primary bg-opacity-10 border border-primary border-opacity-25">
-        <div class="row align-items-center">
-            <div class="col-md-8">
-                <h6 class="fw-bold text-primary mb-1"><i class="bi bi-share-fill me-2"></i>رابط الطباعة للأولاد وباقي أجهزة البيت:</h6>
-                <div class="d-flex align-items-center gap-2 mt-2">
-                    <span class="fs-5 fw-bold font-monospace bg-white px-3 py-1 rounded-3 border text-dark" id="shareLink">http://{{ server_ip }}:5000</span>
-                    <button class="btn btn-primary btn-sm" onclick="copyLink()">
-                        <i class="bi bi-clipboard"></i> نسخ الرابط
-                    </button>
+        <div class="row g-3 align-items-center">
+            <div class="col-12 col-md-8">
+                <h6 class="fw-bold text-primary mb-2"><i class="bi bi-share-fill me-2"></i>روابط الطباعة للأولاد وباقي أجهزة البيت:</h6>
+                
+                <!-- 1. الرابط العالمي من كلاود فلير (من خارج البيت 4G) -->
+                {% if cloudflare_url %}
+                <div class="mb-2">
+                    <small class="text-muted d-block mb-1">🌐 الرابط العالمي (يعمل من خارج البيت ومن باقة الموبايل):</small>
+                    <div class="input-group">
+                        <input type="text" class="form-control font-monospace bg-white text-dark text-truncate" id="cfLinkInput" value="{{ cloudflare_url }}" readonly>
+                        <button class="btn btn-primary text-nowrap" type="button" onclick="copyText('cfLinkInput', 'تم نسخ رابط كلاود فلير العالمي!')">
+                            <i class="bi bi-clipboard"></i> نسخ
+                        </button>
+                    </div>
                 </div>
-                <small class="text-muted d-block mt-2">يفتحه أي شخص متصل بالواي فاي من موبايله أو لابه ليطبع فوراً!</small>
+                {% endif %}
+
+                <!-- 2. رابط الواي فاي الداخلي -->
+                <div>
+                    <small class="text-muted d-block mb-1">📶 رابط الواي فاي الداخلي (داخل المنزل فقط):</small>
+                    <div class="input-group">
+                        <input type="text" class="form-control font-monospace bg-white text-dark text-truncate" id="localLinkInput" value="http://{{ server_ip }}:5000" readonly>
+                        <button class="btn btn-outline-primary text-nowrap" type="button" onclick="copyText('localLinkInput', 'تم نسخ رابط الواي فاي الداخلي!')">
+                            <i class="bi bi-clipboard"></i> نسخ
+                        </button>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-4 text-center mt-3 mt-md-0">
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=http://{{ server_ip }}:5000" alt="QR Code" class="img-thumbnail rounded-3 shadow-sm" style="width: 100px; height: 100px;">
-                <div class="small text-muted mt-1">امسح بالكاميرا للفتح السريع</div>
+
+            <!-- الباركود QR -->
+            <div class="col-12 col-md-4 text-center">
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data={{ cloudflare_url or ('http://' + server_ip + ':5000') }}" alt="QR Code" class="img-thumbnail rounded-3 shadow-sm" style="width: 95px; height: 95px;">
+                <div class="small text-muted mt-1">امسح لفتح السيرفر فوراً</div>
             </div>
         </div>
     </div>
@@ -312,7 +332,7 @@
                 <div class="upload-dropzone mb-3" onclick="document.getElementById('fileInput').click()">
                     <i class="bi bi-cloud-arrow-up text-primary" style="font-size: 3.5rem;"></i>
                     <h5 class="fw-bold mt-2 mb-1" id="fileNameLabel">اضغط هنا لاختيار صورة أو ملف PDF</h5>
-                    <small class="text-muted">ستفتح شاشة المعاينة الحية وإزالة الحواف فوراً</small>
+                    <small class="text-muted">ستفتح شاشة المعاينة الحية وإزالة الحواف تماماً قبل الطباعة</small>
                 </div>
 
                 <div id="fileSelectedBar" style="display: none;" class="p-3 bg-light rounded-3 border d-flex justify-content-between align-items-center">
@@ -424,7 +444,7 @@
 
 </div>
 
-<!-- ================= نافذة المعاينة والتحكم وإزالة الحواف تماماً ================= -->
+<!-- ================= نافذة المعاينة والتحكم وإلغاء الحواف التام (Full Bleed) ================= -->
 <div class="modal fade chrome-print-modal" id="printModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
     <div class="modal-dialog modal-xl modal-dialog-centered">
         <div class="modal-content shadow-lg">
@@ -450,8 +470,8 @@
                                 </select>
                             </div>
 
-                            <!-- 2. Margins (التحكم في الحواف وإلغاؤها نهائياً) -->
-                            <div class="mb-3 border-top border-secondary pt-3 bg-dark bg-opacity-50 p-2 rounded-3 border border-secondary">
+                            <!-- 2. Margins (إلغاء الحواف تماماً Full Bleed) -->
+                            <div class="mb-3 border-top border-secondary pt-3 bg-dark bg-opacity-75 p-3 rounded-3 border border-secondary">
                                 <div class="d-flex justify-content-between align-items-center mb-1">
                                     <label class="form-label fw-bold text-warning mb-0">
                                         <i class="bi bi-border-outer me-1"></i> الحواف والهوامش (Margins)
@@ -470,10 +490,33 @@
                                     </button>
                                 </div>
                                 <input type="range" class="form-range" min="0" max="30" value="0" id="marginSlider" name="margin_mm" oninput="onMarginSliderChange(this.value)">
-                                <small class="text-white-50 d-block">اسحب المؤشر لليسار تماماً (0) لإزالة أي خطوط بيضاء حول الصفحة!</small>
+                                <small class="text-white-50 d-block mt-1">
+                                    خيار <strong class="text-warning">0mm</strong> يقوم بتجاوز حواف الرول الميكانيكية ليطبع ممتداً حتى حافة الورقة تماماً!
+                                </small>
+
+                                <!-- أدوات ضبط المحاذاة الدقيقة بالملم لموازنة الحواف الأربعة -->
+                                <div class="mt-2 pt-2 border-top border-secondary">
+                                    <a class="text-decoration-none text-info small d-flex justify-content-between align-items-center" data-bs-toggle="collapse" href="#nudgeCollapse">
+                                        <span><i class="bi bi-arrows-move me-1"></i> موازنة وإزاحة المحاذاة (إذا كانت هناك حافة أكبر من جهة)</span>
+                                        <i class="bi bi-chevron-down"></i>
+                                    </a>
+                                    <div class="collapse mt-2" id="nudgeCollapse">
+                                        <div class="row g-2">
+                                            <div class="col-6">
+                                                <label class="form-label small text-secondary">إزاحة أفقية X (ملم):</label>
+                                                <input type="number" name="shift_x_mm" id="shiftXInput" class="form-control form-control-sm" value="0" step="0.5" oninput="updateLivePreview()">
+                                            </div>
+                                            <div class="col-6">
+                                                <label class="form-label small text-secondary">إزاحة رأسية Y (ملم):</label>
+                                                <input type="number" name="shift_y_mm" id="shiftYInput" class="form-control form-control-sm" value="0" step="0.5" oninput="updateLivePreview()">
+                                            </div>
+                                        </div>
+                                        <small class="text-muted d-block mt-1">استخدم الأرقام (+ أو -) لتوسيط الورقة بدقة ميكانيكية متناهية.</small>
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- 3. Stretch & Scaling (الاسترتش والتكبير) -->
+                            <!-- 3. Stretch & Scaling (الاسترتش ونمط الملاءمة) -->
                             <div class="mb-3 border-top border-secondary pt-3">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <label class="form-label fw-bold text-info mb-0">
@@ -484,20 +527,20 @@
 
                                 <div class="btn-group w-100 my-2" role="group">
                                     <input type="radio" class="btn-check" name="fit_mode" id="fitModeStretch" value="stretch" checked onchange="updateLivePreview()">
-                                    <label class="btn btn-sm btn-outline-info" for="fitModeStretch">🔄 استرتش كامل (Fill All)</label>
+                                    <label class="btn btn-sm btn-outline-info" for="fitModeStretch">🔄 استرتش يملأ الورقة (Stretch)</label>
+
+                                    <input type="radio" class="btn-check" name="fit_mode" id="fitModeCover" value="cover" onchange="updateLivePreview()">
+                                    <label class="btn btn-sm btn-outline-secondary" for="fitModeCover">تغطية كاملة (Cover)</label>
 
                                     <input type="radio" class="btn-check" name="fit_mode" id="fitModeFit" value="fit" onchange="updateLivePreview()">
-                                    <label class="btn btn-sm btn-outline-secondary" for="fitModeFit">ملاءمة متناسقة (Fit)</label>
-
-                                    <input type="radio" class="btn-check" name="fit_mode" id="fitModeOriginal" value="original" onchange="setScale(100)">
-                                    <label class="btn btn-sm btn-outline-secondary" for="fitModeOriginal">100%</label>
+                                    <label class="btn btn-sm btn-outline-secondary" for="fitModeFit">ملاءمة بنسب (Fit)</label>
                                 </div>
 
                                 <input type="range" class="form-range" min="50" max="200" value="100" id="scaleSlider" name="scale_percent" oninput="onScaleSliderChange(this.value)">
                                 <div class="d-flex justify-content-between text-secondary small">
                                     <span>50%</span>
                                     <span>عادي 100%</span>
-                                    <span>200% تمديد مضاعف</span>
+                                    <span>200% تمديد</span>
                                 </div>
                             </div>
 
@@ -614,7 +657,6 @@
                             </div>
                         </div>
 
-                        <!-- إرشادات التكبير بالأسفل -->
                         <div class="small text-white-50 mt-3 text-center">
                             عند اختيار <span class="text-warning fw-bold">بدون حواف (0mm)</span> تغطي الصورة الورقة بالكامل من الحافة إلى الحافة!
                         </div>
@@ -702,10 +744,12 @@
         }
     }
 
-    // تحديث الاسترتش والهوامش لايف
+    // تحديث الاسترتش والهوامش والإزاحة لايف
     function updateLivePreview() {
         const scaleVal = parseInt(document.getElementById('scaleSlider').value) || 100;
         const marginVal = parseInt(document.getElementById('marginSlider').value) || 0;
+        const shiftX = parseFloat(document.getElementById('shiftXInput').value) || 0;
+        const shiftY = parseFloat(document.getElementById('shiftYInput').value) || 0;
         const fitMode = document.querySelector('input[name="fit_mode"]:checked').value;
         const previewContainer = document.getElementById('previewContainer');
         const previewImg = document.getElementById('previewImg');
@@ -720,14 +764,17 @@
 
         if (target) {
             const factor = scaleVal / 100.0;
+            // تطبيق الإزاحة التحسينية
+            target.style.transform = `translate(${shiftX * 2.8}px, ${-shiftY * 2.8}px)`;
+
             if (fitMode === 'stretch') {
                 target.style.width = (100 * factor) + '%';
                 target.style.height = (100 * factor) + '%';
-                target.style.objectFit = 'fill'; // تمديد كامل بدون أي حواف بيضاء
-            } else if (fitMode === 'original') {
-                target.style.width = 'auto';
-                target.style.height = 'auto';
-                target.style.objectFit = 'none';
+                target.style.objectFit = 'fill';
+            } else if (fitMode === 'cover') {
+                target.style.width = (100 * factor) + '%';
+                target.style.height = (100 * factor) + '%';
+                target.style.objectFit = 'cover';
             } else {
                 target.style.width = (100 * factor) + '%';
                 target.style.height = (100 * factor) + '%';
@@ -758,11 +805,6 @@
     }
 
     function onScaleSliderChange(val) {
-        updateLivePreview();
-    }
-
-    function setScale(val) {
-        document.getElementById('scaleSlider').value = val;
         updateLivePreview();
     }
 
@@ -799,10 +841,12 @@
         }
     }
 
-    function copyLink() {
-        const text = document.getElementById('shareLink').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            alert("تم نسخ الرابط بنجاح! أرسله لأولادك عبر واتساب ليطبعوا من موبايلاتهم.");
+    function copyText(elementId, alertMsg) {
+        const input = document.getElementById(elementId);
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value).then(() => {
+            alert(alertMsg);
         });
     }
 </script>
