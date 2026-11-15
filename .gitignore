@@ -1,0 +1,19 @@
+# بيئة بايثون والملفات المؤقتة
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+env/
+
+# الملفات المرفوعة مؤقتاً للطباعة (لحماية الخصوصية)
+uploads/*
+!uploads/.gitkeep
+
+# الملفات المشتركة
+shared_files/*
+!shared_files/.gitkeep
+
+# ملفات النظام
+Thumbs.db
+.DS_Store
+
